@@ -2,7 +2,13 @@
 
 #pragma once
 
+#include "CanvasItem.h"
+#include "Components/DecalComponent.h"
+#include "Containers/Map.h"
+#include "Containers/UnrealString.h"
 #include "CoreMinimal.h"
+#include "Engine/CanvasRenderTarget2D.h"
+#include "Engine/Font.h"
 #include "GameFramework/Actor.h"
 #include "Templates/SubclassOf.h"
 #include "UObject/ObjectMacros.h"
@@ -19,11 +25,26 @@ class ALGORITHM_VISUALIZER_API AGraphNode : public AActor
 
 public:
 	// Sets default values for this actor's properties
-	AGraphNode(std::string);
+	AGraphNode(FString);
 	AGraphNode();
+
+	UFUNCTION()
+	void UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height);
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* StaticMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	UDecalComponent* NameDecal;
+
+	UPROPERTY(EditAnywhere)
+	float DecalScale = 4.0;
+
+	UPROPERTY(EditAnywhere)
+	UFont* TextFont;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UCanvasRenderTarget2D> RenderTargetClass;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ANodeEdge> GraphEdgeBlueprint;
@@ -31,16 +52,19 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void								 BeginPlay() override;
-	std::string									 name;
-	std::unordered_map<std::string, AGraphNode*> edges;
-	std::unordered_map<std::string, ANodeEdge*> VisualEdges;
+	FString									 name;
+	TMap<FString, AGraphNode*> edges;
+	TMap<FString, ANodeEdge*>	 VisualEdges;
+
 
 	void SpawnCable(AGraphNode* FromNode, AGraphNode* ToNode);
 
+	UCanvasRenderTarget2D* dynamicTexture;
+
 public:
 	// Called every frame
-	void		SetName(std::string);
-	std::string GetNodeName();
+	void		SetName(FString);
+	FString GetNodeName();
 	void		AddEdge(AGraphNode* Node);
-	float										 NodeRadius;
+	float		NodeRadius;
 };

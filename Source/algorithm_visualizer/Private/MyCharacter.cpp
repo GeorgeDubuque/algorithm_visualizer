@@ -91,7 +91,7 @@ void AMyCharacter::OnClick(const FInputActionValue& Action)
 
 			UE_LOG(LogTemp, Display,
 				TEXT("Created node with name: %s"),
-				ANSI_TO_TCHAR(GraphNodeInstance->GetNodeName().c_str()));
+				*GraphNodeInstance->GetNodeName());
 			numNodes++; // increments the num nodes we have in order to generate the node name correctly
 		}
 	}
@@ -99,10 +99,10 @@ void AMyCharacter::OnClick(const FInputActionValue& Action)
 
 // TODO: make it so this can go on forever A, B, C,...,Z, AA, AB, AC
 //  right now this will break if the num node exceeds the ascii char nums
-std::string AMyCharacter::GenerateGraphNodeName()
+FString AMyCharacter::GenerateGraphNodeName()
 {
 	char		name = static_cast<char>(A_IN_HEX + numNodes);
-	std::string str{ name };
+	FString str = FString::Chr(name);
 	return str;
 }
 

@@ -60,7 +60,7 @@ protected:
 	int		numNodes = 0;
 
 private:
-	std::string GenerateGraphNodeName();
+	FString GenerateGraphNodeName();
 
 public:
 	// Called every frame
