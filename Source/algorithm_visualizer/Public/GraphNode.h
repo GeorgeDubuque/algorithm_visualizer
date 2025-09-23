@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "Camera/PlayerCameraManager.h"
 #include "CanvasItem.h"
 #include "Components/DecalComponent.h"
 #include "Containers/Map.h"
@@ -51,20 +52,26 @@ public:
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void								 BeginPlay() override;
-	FString									 name;
-	TMap<FString, AGraphNode*> edges;
-	TMap<FString, ANodeEdge*>	 VisualEdges;
+	virtual void BeginPlay() override;
+	// In your C++ class header (.h)
+protected:
+	virtual void Tick(float DeltaTime) override;
 
+	FString					   name;
+	TMap<FString, AGraphNode*> edges;
+	TMap<FString, ANodeEdge*>  VisualEdges;
+	APlayerCameraManager* CameraManager;
 
 	void SpawnCable(AGraphNode* FromNode, AGraphNode* ToNode);
+
+	void RotateDecalToCamera();
 
 	UCanvasRenderTarget2D* dynamicTexture;
 
 public:
 	// Called every frame
-	void		SetName(FString);
+	void	SetName(FString);
 	FString GetNodeName();
-	void		AddEdge(AGraphNode* Node);
-	float		NodeRadius;
+	void	AddEdge(AGraphNode* Node);
+	float	NodeRadius;
 };

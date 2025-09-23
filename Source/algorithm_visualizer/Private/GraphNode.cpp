@@ -5,6 +5,7 @@
 #include "Containers/UnrealString.h"
 #include "CoreGlobals.h"
 #include "Engine/Texture.h"
+#include "GameFramework/PlayerController.h"
 #include "Internationalization/Text.h"
 #include "Logging/LogVerbosity.h"
 #include "Math/MathFwd.h"
@@ -16,6 +17,7 @@
 
 AGraphNode::AGraphNode()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	SetRootComponent(StaticMesh);
 	NameDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("Decal"));
@@ -24,11 +26,58 @@ AGraphNode::AGraphNode()
 // Sets default values
 AGraphNode::AGraphNode(FString name)
 {
+	PrimaryActorTick.bCanEverTick = true;
 	this->name = name;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	SetRootComponent(StaticMesh);
 	NameDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("Decal"));
 	NameDecal->SetupAttachment(RootComponent);
+}
+
+void AGraphNode::BeginPlay()
+{
+	Super::BeginPlay();
+	NodeRadius = StaticMesh->Bounds.SphereRadius;
+	// Now GetWorld() is safe to call
+	if (GetWorld() && RenderTargetClass)
+	{
+		dynamicTexture = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(GetWorld(), RenderTargetClass);
+		if (dynamicTexture)
+		{
+			dynamicTexture->OnCanvasRenderTargetUpdate.AddDynamic(this, &AGraphNode::UpdateDecalTexture);
+			dynamicTexture->UpdateResource();
+		}
+	}
+
+	APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+
+	if (PlayerController)
+	{
+		CameraManager = PlayerController->PlayerCameraManager;
+	}
+}
+
+void AGraphNode::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	RotateDecalToCamera();
+}
+
+void AGraphNode::RotateDecalToCamera(){
+	if (CameraManager)
+	{
+		FVector CameraLocation = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->GetCameraLocation();
+		FVector DecalLocation = NameDecal->GetComponentLocation();
+		FVector DirectionToCamera = (CameraLocation - DecalLocation).GetSafeNormal() * -1.0f;
+
+		FRotator LookAtRotation = DirectionToCamera.Rotation();
+
+		// Adjust for decal orientation
+		LookAtRotation.Roll += 90.0f; 
+
+		NameDecal->SetWorldRotation(LookAtRotation);
+		NameDecal->SetWorldLocation(GetActorLocation() + DirectionToCamera.Normalize() * 2);
+	}
 }
 
 void AGraphNode::UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height)
@@ -39,7 +88,7 @@ void AGraphNode::UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height)
 		TextFont,
 		FLinearColor::White);
 
-	TextItem.Scale = FVector2D(DecalScale, DecalScale);
+	TextItem.Scale = FVector2D(DecalScale, 4.0);
 	TextItem.bCentreX = true;
 	TextItem.bCentreY = true;
 
@@ -48,7 +97,6 @@ void AGraphNode::UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height)
 	UMaterialInstanceDynamic* NewMat = NameDecal->CreateDynamicMaterialInstance();
 	NewMat->SetTextureParameterValue("TP2d", dynamicTexture);
 	NameDecal->SetDecalMaterial(NewMat);
-
 }
 
 void AGraphNode::SetName(FString name)
@@ -56,22 +104,6 @@ void AGraphNode::SetName(FString name)
 	this->name = name;
 
 	dynamicTexture->UpdateResource();
-}
-
-void AGraphNode::BeginPlay()
-{
-	Super::BeginPlay();
-	NodeRadius = StaticMesh->Bounds.SphereRadius;
-// Now GetWorld() is safe to call
-    if (GetWorld() && RenderTargetClass)
-    {
-        dynamicTexture = UCanvasRenderTarget2D::CreateCanvasRenderTarget2D(GetWorld(), RenderTargetClass);
-        if (dynamicTexture)
-        {
-            dynamicTexture->OnCanvasRenderTargetUpdate.AddDynamic(this, &AGraphNode::UpdateDecalTexture);
-            dynamicTexture->UpdateResource();
-        }
-    }
 }
 
 void AGraphNode::AddEdge(AGraphNode* Node)
