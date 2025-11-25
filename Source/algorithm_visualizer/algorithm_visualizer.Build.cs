@@ -8,7 +8,7 @@ public class algorithm_visualizer : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "UMG", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "CableComponent" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "UMG", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "CableComponent", "ActorSequence" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

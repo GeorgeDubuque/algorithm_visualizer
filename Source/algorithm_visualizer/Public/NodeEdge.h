@@ -31,4 +31,10 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AStaticMeshActor> ArrowMesh;
+
+	UPROPERTY(BlueprintReadonly)
+	AStaticMeshActor* Arrow;
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void Travel();
 };

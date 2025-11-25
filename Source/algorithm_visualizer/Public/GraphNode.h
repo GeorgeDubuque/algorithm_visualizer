@@ -16,6 +16,7 @@
 #include <string>
 #include <unordered_map>
 #include "CableActor.h"
+#include "ActorSequenceComponent.h"
 #include "GraphNode.generated.h"
 
 UCLASS()
@@ -32,8 +33,14 @@ public:
 	UFUNCTION()
 	void UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height);
 
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* StaticMesh;
+	UFUNCTION(BlueprintNativeEvent)
+	void OnVisited(AGraphNode* NextNode);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void OnTravelTo(AGraphNode* NextNode);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMeshComponent* StaticMesh;
 
 	UPROPERTY(VisibleAnywhere)
 	UDecalComponent* NameDecal;
@@ -50,6 +57,14 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ANodeEdge> GraphEdgeBlueprint;
 
+	TMap<FString, AGraphNode*> Edges;
+
+	UPROPERTY(BlueprintReadOnly)
+	FString NodeName;
+
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FString, ANodeEdge*> VisualEdges;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -57,9 +72,6 @@ protected:
 protected:
 	virtual void Tick(float DeltaTime) override;
 
-	FString					   name;
-	TMap<FString, AGraphNode*> edges;
-	TMap<FString, ANodeEdge*>  VisualEdges;
 	APlayerCameraManager* CameraManager;
 
 	void SpawnCable(AGraphNode* FromNode, AGraphNode* ToNode);

@@ -33,7 +33,7 @@ void ANodeEdge::AddArrowAtEnd()
 {
 	FVector CableDirection =
 		(ToNode->GetActorLocation() - FromNode->GetActorLocation()).GetSafeNormal();
-	AStaticMeshActor* Arrow = GetWorld()->SpawnActor<AStaticMeshActor>(
+	Arrow = GetWorld()->SpawnActor<AStaticMeshActor>(
 		ArrowMesh,
 		ToNode->GetActorLocation() - (CableDirection * (ToNode->NodeRadius + 20)),
 		CableDirection.Rotation());
@@ -50,4 +50,8 @@ void ANodeEdge::AddArrowAtStart()
 		FromNode->GetActorLocation() + (CableDirection * (ToNode->NodeRadius + 20)),
 		(-CableDirection).Rotation());
 	SetActorLocation(Arrow->GetActorLocation());
+}
+
+void ANodeEdge::Travel_Implementation(){
+
 }

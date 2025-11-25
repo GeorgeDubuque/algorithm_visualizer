@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "AlgVis_GameMode.h"
 #include "CoreMinimal.h"
 #include "Engine/HitResult.h"
 #include "GameFramework/Actor.h"
@@ -38,6 +39,9 @@ public:
 	UInputAction* IA_Look;
 
 	UPROPERTY(EditAnywhere)
+	UInputAction* IA_ToggleMouse;
+
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<AGraphNode> GraphNode;
 
 	UPROPERTY(EditDefaultsOnly, Category="UI")
@@ -54,10 +58,13 @@ protected:
 	void	OnReleaseClick(const FInputActionValue& Action);
 	void	OnMove(const FInputActionValue& Action);
 	void	OnLook(const FInputActionValue& Action);
+	void	OnToggleMouse(const FInputActionValue& Action);
 	FHitResult	LineTraceForward();
 	AActor* LastClickedActor;
 	int		A_IN_HEX = 65;
 	int		numNodes = 0;
+	AAlgVis_GameMode* GameMode;
+	bool bIsMouseVisible;
 
 private:
 	FString GenerateGraphNodeName();

@@ -18,26 +18,43 @@
 AGraphNode::AGraphNode()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	SetRootComponent(StaticMesh);
+
+	// Create a root component FIRST
+	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+
+	// Skeletal Mesh
+	StaticMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	StaticMesh->SetupAttachment(RootComponent);
+
+	// Decal
 	NameDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("Decal"));
-	NameDecal->SetupAttachment(RootComponent);
+	NameDecal->SetupAttachment(StaticMesh);
 }
 // Sets default values
 AGraphNode::AGraphNode(FString name)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	this->name = name;
-	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	SetRootComponent(StaticMesh);
+	this->NodeName = name;
+	PrimaryActorTick.bCanEverTick = true;
+
+	// Create a root component FIRST
+	USceneComponent* Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
+	RootComponent = Root;
+
+	// Skeletal Mesh
+	StaticMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	StaticMesh->SetupAttachment(RootComponent);
+
+	// Decal
 	NameDecal = CreateDefaultSubobject<UDecalComponent>(TEXT("Decal"));
-	NameDecal->SetupAttachment(RootComponent);
+	NameDecal->SetupAttachment(StaticMesh);
 }
 
 void AGraphNode::BeginPlay()
 {
 	Super::BeginPlay();
-	NodeRadius = StaticMesh->Bounds.SphereRadius;
+	NodeRadius = StaticMesh->GetCollisionShape().GetSphereRadius();
 	// Now GetWorld() is safe to call
 	if (GetWorld() && RenderTargetClass)
 	{
@@ -63,7 +80,8 @@ void AGraphNode::Tick(float DeltaTime)
 	RotateDecalToCamera();
 }
 
-void AGraphNode::RotateDecalToCamera(){
+void AGraphNode::RotateDecalToCamera()
+{
 	if (CameraManager)
 	{
 		FVector CameraLocation = GetWorld()->GetFirstPlayerController()->PlayerCameraManager->GetCameraLocation();
@@ -73,7 +91,7 @@ void AGraphNode::RotateDecalToCamera(){
 		FRotator LookAtRotation = DirectionToCamera.Rotation();
 
 		// Adjust for decal orientation
-		LookAtRotation.Roll += 90.0f; 
+		LookAtRotation.Roll += 90.0f;
 
 		NameDecal->SetWorldRotation(LookAtRotation);
 		NameDecal->SetWorldLocation(GetActorLocation() + DirectionToCamera.Normalize() * 2);
@@ -84,7 +102,7 @@ void AGraphNode::UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height)
 {
 	FCanvasTextItem TextItem = FCanvasTextItem(
 		FVector2D(Width / 2.0, Height / 2.0),
-		FText::FromString(*this->name),
+		FText::FromString(*this->NodeName),
 		TextFont,
 		FLinearColor::White);
 
@@ -101,43 +119,43 @@ void AGraphNode::UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height)
 
 void AGraphNode::SetName(FString name)
 {
-	this->name = name;
+	this->NodeName = name;
 
 	dynamicTexture->UpdateResource();
 }
 
 void AGraphNode::AddEdge(AGraphNode* Node)
 {
-	if (Node->name == this->name)
+	if (Node->NodeName == this->NodeName)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("attempted to add self as edge in graph node"));
 		return;
 	}
-	if (!edges.Contains(Node->name))
+	if (!Edges.Contains(Node->NodeName))
 	{
 
-		edges.Add({ Node->name, Node });
+		Edges.Add({ Node->NodeName, Node });
 
-		if (!Node->edges.Contains(this->name))
+		if (!Node->Edges.Contains(this->NodeName))
 		{
 			ANodeEdge* GraphEdge = GetWorld()->SpawnActor<ANodeEdge>(
 				GraphEdgeBlueprint, FVector::ZeroVector, FRotator::ZeroRotator);
 
 			GraphEdge->AttachEdge(this, Node);
 
-			VisualEdges.Add({ Node->name, GraphEdge });
+			VisualEdges.Add({ Node->NodeName, GraphEdge });
 		}
 		else
 		{
-			Node->VisualEdges[this->name]->AddArrowAtStart();
+			Node->VisualEdges[this->NodeName]->AddArrowAtStart();
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning,
 			TEXT("Node %s already has edge to %s."),
-			*this->name,
-			*this->name);
+			*this->NodeName,
+			*this->NodeName);
 	}
 }
 
@@ -145,7 +163,15 @@ void AGraphNode::SpawnCable(AGraphNode* FromNode, AGraphNode* ToNode)
 {
 }
 
+void AGraphNode::OnVisited_Implementation(AGraphNode* NextNode)
+{
+}
+
+void AGraphNode::OnTravelTo_Implementation(AGraphNode* NextNode)
+{
+}
+
 FString AGraphNode::GetNodeName()
 {
-	return this->name;
+	return this->NodeName;
 }

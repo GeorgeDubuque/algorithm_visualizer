@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "MyCharacter.h"
+#include "AlgVis_GameMode.h"
 #include "Animation/AnimationAsset.h"
 #include "Blueprint/UserWidget.h"
 #include "CoreGlobals.h"
@@ -49,6 +50,8 @@ void AMyCharacter::BeginPlay()
 
 	UUserWidget* WidgetInstance = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
 	WidgetInstance->AddToViewport();
+
+	GameMode = GetWorld()->GetAuthGameMode<AAlgVis_GameMode>();
 }
 
 // Called every frame
@@ -60,9 +63,8 @@ void AMyCharacter::Tick(float DeltaTime)
 void AMyCharacter::OnMove(const FInputActionValue& Action)
 {
 	FVector2D MoveInput = Action.Get<FVector2D>();
-	FVector MoveDirection = 
-		GetLocalViewingPlayerController()->PlayerCameraManager->GetActorForwardVector() * MoveInput.Y + 
-		GetActorRightVector() * MoveInput.X;
+	FVector	  MoveDirection =
+		GetLocalViewingPlayerController()->PlayerCameraManager->GetActorForwardVector() * MoveInput.Y + GetActorRightVector() * MoveInput.X;
 	AddMovementInput(MoveDirection.GetSafeNormal(), MoveSpeed);
 }
 void AMyCharacter::OnLook(const FInputActionValue& Action)
@@ -86,9 +88,9 @@ void AMyCharacter::OnClick(const FInputActionValue& Action)
 				GraphNode, Hit.ImpactPoint, FRotator::ZeroRotator);
 			GraphNodeInstance->SetName(GenerateGraphNodeName());
 			GraphNodeInstance->SetActorLocation(
-				GraphNodeInstance->GetActorLocation() + 
-				(FVector::UpVector * GraphNodeInstance->StaticMesh->GetCollisionShape().GetSphereRadius()));
+				GraphNodeInstance->GetActorLocation() + (FVector::UpVector * GraphNodeInstance->StaticMesh->GetCollisionShape().GetSphereRadius()));
 
+			GameMode->AddGraphNode(GraphNodeInstance);
 			UE_LOG(LogTemp, Display,
 				TEXT("Created node with name: %s"),
 				*GraphNodeInstance->GetNodeName());
@@ -101,7 +103,7 @@ void AMyCharacter::OnClick(const FInputActionValue& Action)
 //  right now this will break if the num node exceeds the ascii char nums
 FString AMyCharacter::GenerateGraphNodeName()
 {
-	char		name = static_cast<char>(A_IN_HEX + numNodes);
+	char	name = static_cast<char>(A_IN_HEX + numNodes);
 	FString str = FString::Chr(name);
 	return str;
 }
@@ -134,6 +136,26 @@ void AMyCharacter::OnReleaseClick(const FInputActionValue& Action)
 	}
 }
 
+void AMyCharacter::OnToggleMouse(const FInputActionValue& Action)
+{
+    APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    if (PC)
+    {
+        bIsMouseVisible = !bIsMouseVisible;
+        PC->bShowMouseCursor = bIsMouseVisible;
+
+        // Also set input mode
+        if (bIsMouseVisible)
+        {
+            PC->SetInputMode(FInputModeGameAndUI());
+        }
+        else
+        {
+            PC->SetInputMode(FInputModeGameOnly());
+        }
+    }
+}
+
 FHitResult AMyCharacter::LineTraceForward()
 {
 
@@ -156,4 +178,5 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	InputComponent->BindAction(IA_Click, ETriggerEvent::Completed, this, &AMyCharacter::OnReleaseClick);
 	InputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AMyCharacter::OnMove);
 	InputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AMyCharacter::OnLook);
+	InputComponent->BindAction(IA_ToggleMouse, ETriggerEvent::Started, this, &AMyCharacter::OnToggleMouse);
 }
