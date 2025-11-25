@@ -34,7 +34,7 @@ public:
 	void UpdateDecalTexture(UCanvas* Canvas, int32 Width, int32 Height);
 
 	UFUNCTION(BlueprintNativeEvent)
-	void OnVisited(AGraphNode* NextNode);
+	void OnVisited();
 
 	UFUNCTION(BlueprintNativeEvent)
 	void OnTravelTo(AGraphNode* NextNode);

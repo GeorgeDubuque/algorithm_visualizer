@@ -5,6 +5,7 @@
 #include "Containers/Array.h"
 #include "Containers/Map.h"
 #include "Containers/Queue.h"
+#include "Containers/Set.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/GameMode.h"
@@ -12,6 +13,7 @@
 #include "Templates/SubclassOf.h"
 #include "UObject/ObjectMacros.h"
 #include "AlgVis_GameMode.generated.h"
+
 
 struct DFS_State {
     DFS_State()
@@ -37,6 +39,7 @@ public:
 	TQueue<DFS_State> DFS_States;
 	void DFS(AGraphNode* Node, TSet<FString>& VisitedNodes);
 	void AddGraphNode(AGraphNode*);
+	void SaveDFS_State(AGraphNode* Node, TSet<FString>& VisitedNodes);
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> CurrNodeMesh;
@@ -45,6 +48,7 @@ public:
 
 	void RunDFS(FString NodeName);
 	void PlaybackDFS();
+
 	UFUNCTION(BlueprintCallable)
 	void DFS_ProcessNextState();
 
@@ -52,6 +56,11 @@ public:
 
 	UPROPERTY()
 	TArray<AGraphNode*> DFSStack;
+
+	UPROPERTY(BlueprintReadWrite)
+	int Curr_DFS_Animation_Index = 0;
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FString> DFS_AnimationStates;
 
 	UPROPERTY()
 	float VisualizeDelay = 1.0f;

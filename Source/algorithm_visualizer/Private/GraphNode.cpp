@@ -163,7 +163,7 @@ void AGraphNode::SpawnCable(AGraphNode* FromNode, AGraphNode* ToNode)
 {
 }
 
-void AGraphNode::OnVisited_Implementation(AGraphNode* NextNode)
+void AGraphNode::OnVisited_Implementation()
 {
 }
 

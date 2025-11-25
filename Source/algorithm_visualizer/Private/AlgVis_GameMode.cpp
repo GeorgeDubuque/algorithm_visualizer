@@ -28,14 +28,20 @@ void AAlgVis_GameMode::BeginPlay()
 	CurrNodeMeshInstance = GetWorld()->SpawnActor<AActor>(CurrNodeMesh);
 }
 
-void AAlgVis_GameMode::DFS(AGraphNode* Node, TSet<FString>& VisitedNodes)
+void AAlgVis_GameMode::SaveDFS_State(AGraphNode* Node, TSet<FString>& VisitedNodes)
 {
-
 	// Store State to be Playback
 	DFS_State CurrState;
 	CurrState.CurrentNode = Node;
 	CurrState.CurrentVisitedNodes = VisitedNodes;
 	DFS_States.Enqueue(CurrState);
+	UE_LOG(LogTemp, Warning, TEXT("Saving State: %s"), *CurrState.CurrentNode->GetNodeName());
+}
+
+void AAlgVis_GameMode::DFS(AGraphNode* Node, TSet<FString>& VisitedNodes)
+{
+
+	DFS_AnimationStates.Add("Visit " + Node->GetNodeName());
 
 	VisitedNodes.Add(Node->GetNodeName());
 	UE_LOG(LogTemp, Display, TEXT("Visited Node: %s"), *Node->GetNodeName());
@@ -46,7 +52,9 @@ void AAlgVis_GameMode::DFS(AGraphNode* Node, TSet<FString>& VisitedNodes)
 	{
 		if (!VisitedNodes.Contains(NodeEdge->GetNodeName()))
 		{
+			DFS_AnimationStates.Add("Travel " + Node->GetNodeName() + " " + NodeEdge->GetNodeName());
 			DFS(NodeEdge, VisitedNodes);
+			DFS_AnimationStates.Add("Travel " + NodeEdge->GetNodeName() + " " + Node->GetNodeName());
 		}
 	}
 }
@@ -63,31 +71,54 @@ void AAlgVis_GameMode::RunDFS(FString StartingNodeName)
 	DFS(StartingNode, VisitedNodes);
 }
 
-void AAlgVis_GameMode::PlaybackDFS(){
+void AAlgVis_GameMode::PlaybackDFS()
+{
 	DFS_ProcessNextState();
 }
 
-void AAlgVis_GameMode::DFS_ProcessNextState(){
-	//if(IsValid(PrevState.CurrentNode)){
+void AAlgVis_GameMode::DFS_ProcessNextState()
+{
+	// if(IsValid(PrevState.CurrentNode)){
 	//	PrevState.CurrentNode->SetActorRelativeScale3D(FVector(.9,.9,.9));
-	//}
+	// }
 
-	if(DFS_States.IsEmpty()) return;
+	if (Curr_DFS_Animation_Index >= DFS_AnimationStates.Num())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No More Animation States, resetting."));
+		Curr_DFS_Animation_Index = 0;
+		DFS_AnimationStates.Reset();
+		return;
+	}
 
-	DFS_State CurrState;
-	DFS_States.Dequeue(CurrState);
-	UE_LOG(LogTemp, Warning, TEXT("Playback Curr Node: %s"), *CurrState.CurrentNode->NodeName);
-	DFS_State NextState;
-	DFS_States.Peek(NextState);
-	CurrState.CurrentNode->OnVisited(NextState.CurrentNode);
+	FString CurrState = DFS_AnimationStates[Curr_DFS_Animation_Index];
+	UE_LOG(LogTemp, Warning, TEXT("Playback Curr Node: %s"), *CurrState);
+	TArray<FString> ParsedAnimationCommand;
+	CurrState.ParseIntoArray(ParsedAnimationCommand, TEXT(" "));
+	FString AnimationType = ParsedAnimationCommand[0];
 
-	//CurrState.CurrentNode->OnTravelTo(NextState.CurrentNode);
-	PrevState = CurrState;
+	if (AnimationType == "Visit")
+	{
+		FString		VisitingNodeName = ParsedAnimationCommand[1];
+		AGraphNode* VisitingNode = GraphNodeMap[VisitingNodeName];
+		VisitingNode->OnVisited();
+	}
+	else if (AnimationType == "Travel")
+	{
+		FString		FromNodeName = ParsedAnimationCommand[1];
+		FString		ToNodeName = ParsedAnimationCommand[2];
+		AGraphNode* FromNode = GraphNodeMap[FromNodeName];
+		AGraphNode* ToNode = GraphNodeMap[ToNodeName];
+		FromNode->OnTravelTo(ToNode);
+	}
+	else
+	{
+	}
 
+	Curr_DFS_Animation_Index++;
 
-	//PrevState = CurrState;
+	// PrevState = CurrState;
 
-	//GetWorld()->GetTimerManager().SetTimer(
+	// GetWorld()->GetTimerManager().SetTimer(
 	//	DFSTimerHandle,
 	//	[this, PrevState]()
 	//	{
